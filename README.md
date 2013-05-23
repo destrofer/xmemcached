@@ -72,7 +72,7 @@ Compiling
 =========
 
 Currently compilation is only available in windows (no makefile scripts yet) using
-#develop IDE (http://www.icsharpcode.net/). To compile xmemcached you need to create
+\#develop IDE (http://www.icsharpcode.net/). To compile xmemcached you need to create
 your own solution and add this project to it. Then just press F9 or use
 menu command Build->Build xmemcached. After that binaries will be available
 in `bin/Debug` or `bin/Release` directory.
@@ -100,7 +100,7 @@ Linux
 Copy compiled `xmemcached.exe` to `/bin/xmemcached` (don't forget to remove extension) and
 execute these commands:
 	
-	chmod +x /bin/xmemcached.exe
+	chmod +x /bin/xmemcached
 	mkdir /etc/xmemcached
 	
 Create a file `/etc/init.d/xmemcached` with following contents. While editing you might want to change
@@ -170,7 +170,7 @@ Create a file `/etc/init.d/xmemcached` with following contents. While editing yo
 	
 	exit 0
 	
-Then execute following commands:
+Then execute following command:
 
 	update-rc.d xmemcached defaults 20 80
 
@@ -258,8 +258,8 @@ Execute these commands to uninstall the service:
 Issues
 ======
 
-There is a known issue when if attacker can have a direct connection to the service
-and the service is a part of a chain. Attacker may issue a flushing command that
+There is a known issue when attacker can have a direct connection to the service
+while the service is a part of a chain. Attacker may issue a flushing command that
 would go in an infinite loop in the server chain as such rending the service useless.
 To prevent that you should configure the service to accept only local connections and
 connections from the previous server in the server chain.
