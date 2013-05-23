@@ -1,5 +1,5 @@
 ﻿/*
- * Copyright 2012 Viacheslav Soroka
+ * Copyright 2012-2013 Viacheslav Soroka
  * Author: Viacheslav Soroka
  * 
  * This file is part of xmemcached.
@@ -58,7 +58,7 @@ namespace xmemcached {
 					if( Listener == null ) {
 						Listener = new TcpListener(m_EndPoint);
 						Listener.Start();
-						Program.Log("Listening at {0}:{1} ({2})", EndPoint.Address, EndPoint.Port, DateTime.Now);
+						Log.WriteLine(Log.Level.Info, "Listening at {0}:{1}", EndPoint.Address, EndPoint.Port);
 					}
 					
 					try {
@@ -80,7 +80,7 @@ namespace xmemcached {
 			}
 			catch {
 			}
-			Program.Log("Listener stopped at {0}:{1} ({2})", EndPoint.Address, EndPoint.Port, DateTime.Now);
+			Log.WriteLine(Log.Level.Info, "Listener stopped at {0}:{1}", EndPoint.Address, EndPoint.Port);
 		}
 	}
 }

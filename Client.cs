@@ -1,5 +1,5 @@
 ﻿/*
- * Copyright 2012 Viacheslav Soroka
+ * Copyright 2012-2013 Viacheslav Soroka
  * Author: Viacheslav Soroka
  * 
  * This file is part of xmemcached.
@@ -87,7 +87,7 @@ namespace xmemcached {
 		
 		private void SendResponse(string resp) {
 			byte[] respB = Encoding.ASCII.GetBytes(String.Format("{0}\r\n", resp));
-			// Program.Log("Response: {0}", resp);
+			Log.WriteLine(Log.Level.Debug, "Response: {0}", resp);
 			DataStream.Write(respB, 0, respB.Length);
 		}
 		
@@ -106,7 +106,7 @@ namespace xmemcached {
 					if( command == null )
 						break;
 					cmdTokens = command.Split(' ');
-					// Program.Log("Command: {0}", command);
+					Log.WriteLine(Log.Level.Debug, "Command: {0}", command);
 					isCas = false;
 					switch(cmdTokens[0]) {
 						case "gets":
@@ -129,8 +129,8 @@ namespace xmemcached {
 									DataStream.Write(item.Data, 0, item.Data.Length);
 									DataStream.Write(EOL, 0, 2);
 								}
-								//else
-								//	Program.Log("Not found: {0}", cmdTokens[i]);
+								else
+									Log.WriteLine(Log.Level.Debug, "Not found: {0}", cmdTokens[i]);
 							}
 							SendResponse("END");
 							break;
@@ -222,16 +222,16 @@ namespace xmemcached {
 			try {
 				if( Connection != null ) {
 					IPEndPoint ep = Connection.RemoteEndPoint as IPEndPoint;
-					/*if( ep != null )
-						Program.Log("Client disconnected at {0}:{1}", ep.Address, ep.Port);
+					if( ep != null )
+						Log.WriteLine(Log.Level.Debug, "Client disconnected at {0}:{1}", ep.Address, ep.Port);
 					else
-						Program.Log("Client disconnected");*/
+						Log.WriteLine(Log.Level.Debug, "Client disconnected");
 					Connection.Shutdown(SocketShutdown.Both);
 					Connection.Close();
 				}
 			}
 			catch {
-				//Program.Log("Client disconnected");
+				Log.WriteLine(Log.Level.Debug, "Client disconnected");
 			}
 			Program.RemoveClient(this);
 		}

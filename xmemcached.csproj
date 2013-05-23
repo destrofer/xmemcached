@@ -78,6 +78,7 @@
     <Compile Include="Client.cs" />
     <Compile Include="Config.cs" />
     <Compile Include="CSClient.cs" />
+    <Compile Include="Log.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Server.cs" />

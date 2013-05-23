@@ -1,5 +1,5 @@
 ﻿/*
- * Copyright 2012 Viacheslav Soroka
+ * Copyright 2012-2013 Viacheslav Soroka
  * Author: Viacheslav Soroka
  * 
  * This file is part of xmemcached.
@@ -38,10 +38,12 @@ namespace xmemcached {
 	class ServiceApp {
 		public static void Main(string[] args) {
 			if( args.Length > 0 && args[0].Equals("-c") ) {
+				Log.LogToConsole = true;
 				Program service = new Program();
 				service.ExecuteAsConsoleApp();
 			}
 			else {
+				Log.LogToConsole = false;
 				ServiceBase[] servicesToRun;
 				servicesToRun = new ServiceBase[] { new Program() };
 				ServiceBase.Run( servicesToRun );
@@ -88,8 +90,6 @@ namespace xmemcached {
 		
 		public static volatile bool RunningInConsole = false;
 		
-		private static StreamWriter LogFile = null;
-	
 		static Program() {
 			IsLinux = Config.IsLinux;
 		}
@@ -124,8 +124,20 @@ namespace xmemcached {
 		
 		public void ServiceThreadFunc() {
 			Config = new Config();
+
+			Log.MaxLevel = Log.Level.Info;
+			Log.SyslogServiceName = ServiceName;
+			if( Config.LogPath.ToLower().Equals("syslog") ) {
+				Log.LogToFile = false;
+				Log.LogToSyslog = true;
+			}
+			else {
+				Log.LogToFile = true;
+				Log.LogToSyslog = false;
+				Log.LogFilePath = Config.LogPath;
+			}
 			
-			Log("Starting server {0}", Config.ServerId);
+			Log.WriteLine(Log.Level.Important, "Starting server {0}", Config.ServerId);
 			
 			/*
  			foreach(IPAddress addr in Config.AllowedAddr.Keys)
@@ -164,7 +176,7 @@ namespace xmemcached {
 				catch(Exception ex) {
 					StopService = true;
 					TermSig = null;
-					Log("Exception: {0}", ex);
+					Log.WriteLine(Log.Level.Debug, "Exception: {0}", ex);
 				}
 			}
 			
@@ -187,42 +199,42 @@ namespace xmemcached {
 							break;
 						}
 						else {
-							Program.Log("Start of state log ({0})", DateTime.Now);
-							Program.Log("GC.GetTotalMemory: {0}", GC.GetTotalMemory(true));
+							Log.WriteLine(Log.Level.Important, "Start of state log ({0})", DateTime.Now);
+							Log.WriteLine(Log.Level.Important, "GC.GetTotalMemory: {0}", GC.GetTotalMemory(true));
 							lock(WriteLock) {
-								Program.Log("Tags ({0}):", Tags.Count);
+								Log.WriteLine(Log.Level.Important, "Tags ({0}):", Tags.Count);
 								foreach(KeyValuePair<string, Tag> pair in Tags) {
-									Program.Log("{0}: {1}", pair.Key, pair.Value.Items.Count);
+									Log.WriteLine(Log.Level.Important, "{0}: {1}", pair.Key, pair.Value.Items.Count);
 								}
 								
-								Program.Log("Keys ({0}):", Storage.Count);
+								Log.WriteLine(Log.Level.Important, "Keys ({0}):", Storage.Count);
 								foreach(KeyValuePair<string, CacheItem> pair in Storage) {
-									Program.Log("{0}: {1}", pair.Key, pair.Value.Data.Length);
+									Log.WriteLine(Log.Level.Important, "{0}: {1}", pair.Key, pair.Value.Data.Length);
 								}
 								
-								Program.Log("Servers ({0}):", Servers.Count);
+								Log.WriteLine(Log.Level.Important, "Servers ({0}):", Servers.Count);
 								foreach( Server server in Servers ) {
-									Program.Log("{0}:{1} {2}", server.EndPoint.Address, server.EndPoint.Port, server.Running ? "Running" : "Stopped");
+									Log.WriteLine(Log.Level.Important, "{0}:{1} {2}", server.EndPoint.Address, server.EndPoint.Port, server.Running ? "Running" : "Stopped");
 								}
 								
-								Program.Log("Clients ({0}):", Clients.Count);
+								Log.WriteLine(Log.Level.Important, "Clients ({0}):", Clients.Count);
 								foreach( KeyValuePair<int, Client> pair in Clients ) {
-									Program.Log("{0} {1} {2}", pair.Key, pair.Value.Address, pair.Value.ConnectTime);
+									Log.WriteLine(Log.Level.Important, "{0} {1} {2}", pair.Key, pair.Value.Address, pair.Value.ConnectTime);
 								}
 							}
-							Program.Log("End of state log");
+							Log.WriteLine(Log.Level.Important, "End of state log");
 						}
 					}
 				}
 			}
 			
-			// Log("Stopping service");
-			// Log("Listeners...");
+			Log.WriteLine(Log.Level.Important, "Stopping service");
+			Log.WriteLine(Log.Level.Debug, "Listeners...");
 			
 			foreach( Server server in Servers )
 				server.Stop();
 
-			// Log("Clients...");
+			Log.WriteLine(Log.Level.Debug, "Clients...");
 			
 			Client[] clients;
 			lock(Clients) {
@@ -233,16 +245,12 @@ namespace xmemcached {
 			foreach( Client client in clients )
 				client.Disconnect();
 
-			// Log("Next server connection...");
+			Log.WriteLine(Log.Level.Debug, "Next server connection...");
 			
 			if( NextServer != null )
 				NextServer.Stop();
 			
-			Log("Service stopped");
-			if( LogFile != null ) {
-				LogFile.Close();
-				LogFile = null;
-			}
+			Log.WriteLine(Log.Level.Important, "Service stopped");
 		}
 		
 		public static void AddClient(Socket client) {
@@ -252,7 +260,7 @@ namespace xmemcached {
 					client.Close();
 					return;
 				}
-				// Log("Client connected from {0}:{1}", ep.Address, ep.Port);
+				Log.WriteLine(Log.Level.Debug, "Client connected from {0}:{1}", ep.Address, ep.Port);
 				lock(Clients) {
 					Client newClient = new Client(client);
 					Clients.Add(newClient.Id, newClient);
@@ -278,7 +286,7 @@ namespace xmemcached {
 			if( pos >= 0 ) id = id.Substring(0, pos);
 			if( Storage.TryGetValue(id, out item) ) {
 				if( item.Expire <= DateTime.Now ) {
-					// Program.Log("Expired: {0}", id);
+					Log.WriteLine(Log.Level.Debug, "Expired: {0}", id);
 					Delete(id, -1);
 					return null;
 				}
@@ -312,9 +320,9 @@ namespace xmemcached {
 					return StoreResult.NotFound;
 				if( StoredSize + (ulong)data.Length > (ulong)Config.MaxStorage ) {
 					bool clean = true;
-					while( StoredSize +  (ulong)data.Length >  (ulong)Config.MaxStorage ) {
+					while( StoredSize + (ulong)data.Length > (ulong)Config.MaxStorage ) {
 						if( clean ) {
-							// Log("CLEAN UP EXPIRED!");
+							Log.WriteLine(Log.Level.Debug, "Cleaning up expired items");
 							// clean up all expired entries
 							List<string> toRemove = new List<string>();
 							DateTime now = DateTime.Now;
@@ -326,7 +334,7 @@ namespace xmemcached {
 							clean = false;
 						}
 						else {
-							// Log("CLEAN UP OLD!");
+							Log.WriteLine(Log.Level.Important, "Cleaning up expired items did not give us enough memory. Cleaning up old items.");
 							// still not enough memory .. cleanup oldest used entries
 							IOrderedEnumerable<KeyValuePair<string, CacheItem>> sorted = Storage.OrderBy(p => p.Value.LastUse);
 							long toFree = (long)data.Length - (Config.MaxStorage - (long)StoredSize);
@@ -429,30 +437,6 @@ namespace xmemcached {
 		}
 
 		#endregion Cache functions
-		
-		public static void Log(string fmt, params object[] parm) {
-			lock(ConsoleSync) {
-				if( RunningInConsole || IsLinux ) {
-					Console.WriteLine(fmt, parm);
-					if( IsLinux && (LogFile != null || Config.LogPath != null) ) {
-						try {
-							if( LogFile == null && Config.LogPath != null )
-								LogFile = new StreamWriter(new FileStream(Config.LogPath, FileMode.Append), System.Text.Encoding.UTF8);
-							if( LogFile != null ) {
-								LogFile.WriteLine(fmt, parm);
-								LogFile.Flush();
-							}
-						}
-						catch {
-							Config.LogPath = null;
-						}
-					}
-				}
-				else {
-					System.Diagnostics.EventLog.WriteEntry("xmemcached", String.Format(fmt, parm));
-				}				
-			}
-		}
 	}
 	
 	[Flags]

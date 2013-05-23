@@ -1,5 +1,5 @@
 ﻿/*
- * Copyright 2012 Viacheslav Soroka
+ * Copyright 2012-2013 Viacheslav Soroka
  * Author: Viacheslav Soroka
  * 
  * This file is part of xmemcached.
@@ -176,6 +176,9 @@ namespace xmemcached {
 						AllowedAddr.Add(ep.Address, true);
 				}
 			}
+			
+			if( LogPath == null || LogPath.Equals("") )
+				LogPath = "syslog";
 		}
 	}
 }

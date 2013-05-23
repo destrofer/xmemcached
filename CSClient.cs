@@ -1,5 +1,5 @@
 ﻿/*
- * Copyright 2012 Viacheslav Soroka
+ * Copyright 2012-2013 Viacheslav Soroka
  * Author: Viacheslav Soroka
  * 
  * This file is part of xmemcached.
@@ -65,11 +65,11 @@ namespace xmemcached {
 						Connection.Connect(Program.Config.NextServerAddr);
 					}
 					catch {
-						// Program.Log("Failed to connect to next server in chain loop");
+						Log.WriteLine(Log.Level.Info, "Failed to connect to next server in chain loop");
 						Thread.Sleep(Program.Config.ReconnectDelay);
 					}
 					if( Connection.Connected ) {
-						Program.Log("Connection to next server in chain loop established");
+						Log.WriteLine(Log.Level.Info, "Connection to next server in chain loop established");
 						stream = Connection.GetStream();
 					}
 					Thread.Sleep(50);
@@ -100,10 +100,10 @@ namespace xmemcached {
 					
 					Thread.Sleep(50);
 					if( !Connection.Connected )
-						Program.Log("Connection to next server in chain loop lost");
+						Log.WriteLine(Log.Level.Info, "Connection to next server in chain loop lost");
 				}
 				catch {
-					Program.Log("Connection to next server in chain loop lost");
+					Log.WriteLine(Log.Level.Info, "Connection to next server in chain loop lost");
 					Connection = null;
 				}
 			}

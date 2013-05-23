@@ -272,7 +272,7 @@ connections from the previous server in the server chain.
 License
 =======
 
-Copyright 2012 Viacheslav Soroka
+Copyright 2012-2013 Viacheslav Soroka
 
 xmemcached is free software: you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
