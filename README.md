@@ -77,6 +77,13 @@ your own solution and add this project to it. Then just press F9 or use
 menu command Build->Build xmemcached. After that binaries will be available
 in `bin/Debug` or `bin/Release` directory.
 
+Initially project was created using mono version 2.10.9. As such references in the project
+point to `C:\Program Files\Mono-2.10.9\lib\mono\4.0\*`. If you have a different version
+of mono installed then you will most probably have to remove and readd references in the IDE
+or, while IDE is closed, manually, using notepad, edit `xmemcached.csproj` and replace all
+`C:\Program Files\Mono-2.10.9\lib\mono\4.0\` with the path to wherever your mono installation
+currently is.
+
 Installation
 ============
 
@@ -97,14 +104,8 @@ You must create a configuration file before starting the service.
 Linux
 -----
 
-Copy compiled `xmemcached.exe` to `/bin/xmemcached` (don't forget to remove extension) and
-execute these commands:
-	
-	chmod +x /bin/xmemcached
-	mkdir /etc/xmemcached
-	
-Create a file `/etc/init.d/xmemcached` with following contents. While editing you might want to change
-`LD_LIBRARY_PATH` variable to match library path to your current mono version:
+Copy compiled `xmemcached.exe` to `/bin/xmemcached` (don't forget to remove extension) and create
+a shell script file `/etc/init.d/xmemcached` with following contents:
 	
 	#!/bin/bash
 	### BEGIN INIT INFO
@@ -169,12 +170,16 @@ Create a file `/etc/init.d/xmemcached` with following contents. While editing yo
 	esac
 	
 	exit 0
-	
-Then execute following command:
 
+While editing you might want to change `LD_LIBRARY_PATH` variable to match it to your current mono version.
+After script was created execute following commands:
+
+	chmod +x /bin/xmemcached
+	chmod +x /etc/init.d/xmemcached
+	mkdir /etc/xmemcached
 	update-rc.d xmemcached defaults 20 80
 
-After installation you must create a configuration file before starting the service.
+Before starting the service you must create a configuration file (see next section).
 
 This installation instruction applies to Debian and Ubuntu linux distributions and may differ
 for other distributions.
