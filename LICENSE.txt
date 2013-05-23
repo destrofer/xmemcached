@@ -1,4 +1,4 @@
-Copyright 2011-2013 Viacheslav Soroka
+Copyright 2012 Viacheslav Soroka
 
 xmemcached is free software: you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
