@@ -66,7 +66,7 @@ Prerequisites
 =============
 
 * mono 2.8.* or later (http://www.mono-project.com/)
-* Microsoft .NET Framework v4.0.30319
+* Microsoft .NET Framework v4.0.30319 (on windows platform)
 
 Compiling
 =========
