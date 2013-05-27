@@ -72,9 +72,6 @@ namespace xmemcached {
 	public class Program : System.ServiceProcess.ServiceBase {
 		public static volatile bool IsLinux;
 		
-		private Thread ServiceThread = null;
-		public static volatile bool StopService = false;
-		
 		private static object ConsoleSync = new object();
 		public static Config Config = null;
 		
@@ -86,8 +83,10 @@ namespace xmemcached {
 		public static Dictionary<string, Tag> Tags = new Dictionary<string, Tag>();
 		public static object WriteLock = new object();
 		public static ulong StoredSize = 0;
+
+		public static volatile bool StopService = false;
+		private Thread ServiceThread = null;
 		private static UnixSignal[] TermSig = null;
-		
 		public static volatile bool RunningInConsole = false;
 		
 		static Program() {
