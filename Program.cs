@@ -321,7 +321,7 @@ namespace xmemcached {
 					bool clean = true;
 					while( StoredSize + (ulong)data.Length > (ulong)Config.MaxStorage ) {
 						if( clean ) {
-							Log.WriteLine(Log.Level.Debug, "Cleaning up expired items");
+							Log.WriteLine(Log.Level.Debug, "'max_storage' limit reached. Cleaning up expired items");
 							// clean up all expired entries
 							List<string> toRemove = new List<string>();
 							DateTime now = DateTime.Now;
@@ -333,7 +333,7 @@ namespace xmemcached {
 							clean = false;
 						}
 						else {
-							Log.WriteLine(Log.Level.Important, "Cleaning up expired items did not give us enough memory. Cleaning up old items.");
+							Log.WriteLine(Log.Level.Debug, "Cleaning up expired items did not give us enough memory. Cleaning up old items.");
 							// still not enough memory .. cleanup oldest used entries
 							IOrderedEnumerable<KeyValuePair<string, CacheItem>> sorted = Storage.OrderBy(p => p.Value.LastUse);
 							long toFree = (long)data.Length - (Config.MaxStorage - (long)StoredSize);
@@ -342,6 +342,11 @@ namespace xmemcached {
 								Delete(cpair.Key, -1);
 								if( toFree <= 0 )
 									break;
+							}
+							if( toFree > 0 ) {
+								Log.WriteLine(Log.Level.Important, "Seems there was a memory leak. Flushing whole cache.");
+								Flush(-1);
+								break;
 							}
 						}
 						// too much ... need to clean up a bit
@@ -432,6 +437,7 @@ namespace xmemcached {
 			lock(WriteLock) {
 				Storage.Clear();
 				Tags.Clear();
+				StoredSize = 0;
 			}
 		}
 
