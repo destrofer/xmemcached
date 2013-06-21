@@ -139,11 +139,13 @@ a shell script file `/etc/init.d/xmemcached` with following contents:
 		stop)
 			echo "Stopping xmemcached"
 			kill `cat /var/lock/$SERVICE_NAME.lock`
+			rm /var/lock/$SERVICE_NAME.lock
 			;;
 		
 		restart)
 			echo "Stopping xmemcached"
 			kill `cat /var/lock/$SERVICE_NAME.lock`
+			rm /var/lock/$SERVICE_NAME.lock
 			
 			echo "Starting xmemcached"
 			mono-service2 -d:$SERVICE_PATH -l:/var/lock/$SERVICE_NAME.lock -m:$SERVICE_NAME $SERVICE_PATH/$SERVICE_NAME
