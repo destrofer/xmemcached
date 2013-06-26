@@ -24,6 +24,9 @@ the items by:
 * using the tag name `:contacts`, which would remove all keys that are in the `contacts` group
 * flushing the whole cache
 
+By default to separate tag name from the key colon symbol (":") is used, but it may be changed
+by writing a different character in tag_character configuration option.
+
 Server chain
 ============
 
@@ -194,7 +197,7 @@ The sample contents of a configuration file `xmemcached.conf`:
 	# Change server_id only if there is more than one server in the network.
 	# It must be unique and not negative 32 bit integer (0 - 2000000000).
 	server_id = 0
-	
+
 	# Comma or whitespace separated list of addresses to bind tcp listeners to.
 	# Address entry may be {*|localhost|ip}[:port]
 	# Samples:
@@ -202,22 +205,34 @@ The sample contents of a configuration file `xmemcached.conf`:
 	#    bind_addr = localhost 192.168.1.1
 	#    bind_addr = localhost:11211; 192.168.1.1:11211
 	bind_addr = localhost; 192.168.1.90
-	
-	# Comma or whitespace separated list of allowed client ip addresses
+
+	# Comma or whitespace separated list of allowed client ip addresses.
 	allowed_addr = localhost; 192.168.1.14; 192.168.1.90
-	
+
 	# Ip and port of next server in the loop chain of xmemcached servers.
-	# Uncomment next_server_addr ONLY when there is more than one xmemcached server!
+	# Uncomment next_server_addr ONLY when there is more than one xmemcached
+	# server!
 	# For normal functionality all servers must be linked in a chain loop.
 	# It means that next_server_addr setting in the last server must be ip and port
 	# of the first server.
 	# This is needed for "flush_all" and "delete" commands to execute on all
 	# xmemcached servers.
 	#next_server_addr = 127.0.0.1:11212
-	
+
+	# Maximum amount of the data that may be stored in the memory. This maximum
+	# is applied for data only. Together with indexing overhead service may use
+	# more memory than limited by max_storage. Limit may be specified as a plain
+	# number of bytes or using number with "K", "M" or "G" suffix. Default is 16M.
 	max_storage = 16M
-	
-	log=/var/log/xmemcached.log 
+
+	# Path to a log file or just "syslog" (which is default) in case when you
+	# want to log to syslog facility.
+	#log = /var/log/xmemcached.log
+	log = syslog
+
+	# A single character that will be used to identify tag names within keys.
+	# by default it is ":".
+	tag_character = :
 
 Currently service loads the config file only from `C:\xmemcached.conf` in windows
 or `/etc/xmemcached/xmemcached.conf` in linux.

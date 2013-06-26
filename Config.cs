@@ -39,6 +39,7 @@ namespace xmemcached {
 		public int MaxDeleteQueueLength = 128;
 		public int ReconnectDelay = 15000;
 		public string LogPath = null;
+		public char TagCharacter = ':';
 		
 		public static bool IsLinux {
 		    get {
@@ -153,10 +154,16 @@ namespace xmemcached {
 									throw new Exception(String.Format("Invalid size modifier on line {0}. Only 'K', 'M' and 'G' modifiers supported.", lineNumber));
 							}
 							break;
-						
+
 						case "server_id":
 							if( !uint.TryParse(data[1], out ServerId) )
-								throw new Exception(String.Format("server_id must be a 32 bit integer on line {0}", lineNumber));
+								throw new Exception(String.Format("'server_id' configuration option must be a 32 bit integer on line {0}", lineNumber));
+							break;
+							
+						case "tag_character":
+							if( data[1].Length > 1 )
+								Log.WriteLine(Log.Level.Warning, "'tag_character' configuration option has a value of multiple characters on line {0}. Only First character will be used.", lineNumber);
+							TagCharacter = data[1][0];
 							break;
 					}
 				}

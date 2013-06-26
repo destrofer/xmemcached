@@ -280,7 +280,7 @@ namespace xmemcached {
 		
 		public static CacheItem Get(string id) {
 			CacheItem item;
-			int pos = id.IndexOf(':');
+			int pos = id.IndexOf(Config.TagCharacter);
 			if( pos == 0 ) return null;
 			if( pos >= 0 ) id = id.Substring(0, pos);
 			if( Storage.TryGetValue(id, out item) ) {
@@ -295,7 +295,7 @@ namespace xmemcached {
 		}
 		
 		public static StoreResult Set(string id, uint customBits, byte[] data, DateTime expire, SetFlags flags) {
-			string[] spl = id.Split(':');
+			string[] spl = id.Split(Config.TagCharacter);
 			string[] tags;
 			string itemId = spl[0];
 			if( itemId.Length == 0 || data.Length > Config.MaxStorage )
@@ -381,7 +381,7 @@ namespace xmemcached {
 			if( NextServer != null && !NextServer.IsFlushing )
 				NextServer.AddToDeleteQueue(id, (originServerId == -1) ? (int)Config.ServerId : originServerId);
 
-			if( (pos = id.IndexOf(':')) >= 0 ) {
+			if( (pos = id.IndexOf(Config.TagCharacter)) >= 0 ) {
 				// removing by tag
 				id = id.Substring(pos + 1);
 				lock(WriteLock) {

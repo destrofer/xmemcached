@@ -10,11 +10,12 @@ server_id = 0
 #    bind_addr = localhost:11211; 192.168.1.1:11211
 bind_addr = localhost; 192.168.1.90
 
-# Comma or whitespace separated list of allowed client ip addresses
+# Comma or whitespace separated list of allowed client ip addresses.
 allowed_addr = localhost; 192.168.1.14; 192.168.1.90
 
 # Ip and port of next server in the loop chain of xmemcached servers.
-# Uncomment next_server_addr ONLY when there is more than one xmemcached server!
+# Uncomment next_server_addr ONLY when there is more than one xmemcached
+# server!
 # For normal functionality all servers must be linked in a chain loop.
 # It means that next_server_addr setting in the last server must be ip and port
 # of the first server.
@@ -22,6 +23,17 @@ allowed_addr = localhost; 192.168.1.14; 192.168.1.90
 # xmemcached servers.
 #next_server_addr = 127.0.0.1:11212
 
+# Maximum amount of the data that may be stored in the memory. This maximum
+# is applied for data only. Together with indexing overhead service may use
+# more memory than limited by max_storage. Limit may be specified as a plain
+# number of bytes or using number with "K", "M" or "G" suffix. Default is 16M.
 max_storage = 16M
 
-log=/var/log/xmemcached.log 
+# Path to a log file or just "syslog" (which is default) in case when you
+# want to log to syslog facility.
+#log = /var/log/xmemcached.log
+log = syslog
+
+# A single character that will be used to identify tag names within keys.
+# By default it is ":".
+tag_character = :
