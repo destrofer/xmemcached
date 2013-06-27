@@ -25,12 +25,14 @@ using System.Text;
 using System.Collections;
 using System.Collections.Generic;
 
+using IGE;
+
 namespace xmemcached {
 	public class Client {
 		private Socket Connection;
 		private Thread Thread;
 		private NetworkStream DataStream;
-		private StringBuilder cmd = new StringBuilder();
+		private ByteQueue cmd = new ByteQueue();
 		private int ib = 0;
 		private char c = '\0';
 		private int eol = 0;
@@ -64,7 +66,6 @@ namespace xmemcached {
 		}
 		
 		private string ReadCommand() {
-			cmd.Clear();
 			eol = 0;
 			do {
 				if( Program.StopService )
@@ -79,10 +80,10 @@ namespace xmemcached {
 				}
 				else {
 					eol = 0;
-					cmd.Append(c);
+					cmd.Enqueue(unchecked((byte)ib));
 				}
 			} while(true);
-			return cmd.ToString();
+			return Encoding.UTF8.GetString(cmd.ToArray());
 		}
 		
 		private void SendResponse(string resp) {

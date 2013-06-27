@@ -74,6 +74,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ByteQueue.cs" />
     <Compile Include="CacheItem.cs" />
     <Compile Include="Client.cs" />
     <Compile Include="Config.cs" />
