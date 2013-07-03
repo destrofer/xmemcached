@@ -74,18 +74,20 @@ Prerequisites
 Compiling
 =========
 
-Currently compilation is only available in windows (no makefile scripts yet) using
-\#develop IDE (http://www.icsharpcode.net/). To compile xmemcached you need to create
-your own solution and add this project to it. Then just press F9 or use
-menu command Build->Build xmemcached. After that binaries will be available
-in `bin/Debug` or `bin/Release` directory.
+There are two coices how to compile the service: using GNU make or via IDE
 
-Initially project was created using mono version 2.10.9. As such references in the project
-point to `C:\Program Files\Mono-2.10.9\lib\mono\4.0\*`. If you have a different version
-of mono installed then you will most probably have to remove and readd references in the IDE
-or, while IDE is closed, manually, using notepad, edit `xmemcached.csproj` and replace all
-`C:\Program Files\Mono-2.10.9\lib\mono\4.0\` with the path to wherever your mono installation
-currently is.
+To compile xmemcached using GNU make, all you have to do is execute command `make` in the
+console (assuming you have PATH variable set in windows).
+
+To compile xmemcached in IDE you need to create your own solution and add this project to it.
+Then just use build command. After that binaries will be available in `bin` directory.
+
+Initially project was created using mono version 2.10.9 in windows. As such references in the
+project file and makefile point to `C:\Program Files\Mono-2.10.9\lib\mono\4.0\*`. If you have
+a different version of mono installed then you will most probably have to remove and readd
+references in the IDE or, while IDE is closed, manually, using notepad, edit `xmemcached.csproj`
+and replace all `C:\Program Files\Mono-2.10.9\lib\mono\4.0\` with the path to wherever your mono
+installation currently is. Similarily, if you use makefile to compile, you have to edit it manually.
 
 Installation
 ============
@@ -93,98 +95,44 @@ Installation
 Windows
 -------
 
-To install the service on windows copy `xmemcached.exe` and `Mono.Posix.dll` from compilation
-output directory to your desired location (for example `C:\Services\xmemcached\`).
-Then run this command from the console:
+You can install service using GNU make by executing command `make install`, but don't forget to edit `conf/xmemcached.conf` beforehand.
+
+To install the service on windows manually you have to copy `bin/xmemcached.exe`, `Mono.Posix.dll` and
+`conf/xmemcached.conf` to your desired location (for example `C:\Services\`).
+Then execute following commands from the console:
 	
-	c:\Windows\Microsoft.NET\Framework\v4.0.30319\InstallUtil.exe /LogToConsole=true C:\Services\xmemcached\xmemcached.exe
+	c:\Windows\Microsoft.NET\Framework\v4.0.30319\InstallUtil.exe /LogToConsole=true C:\Services\xmemcached.exe
+	net start xmemcached
 	
 Note that path to the executable must be full when running that command.
-	
-After that xmemcached will be installed in your system as a service, but it will not be running.
-You must create a configuration file before starting the service.
+
+Before installing you might want to edit configuration file `conf/xmemcached.conf` and
+change `LD_LIBRARY_PATH` variable in `scripts/xmemcached` to match it your current mono version.
+
+Either if you install it using GNU make or manually you have to execute commands as an administrator.
+
+Before installing you might want to edit configuration file `conf/xmemcached.conf`.
+The service will start up after installation so configure it correctly before installing.
 
 Linux
 -----
 
-Copy compiled `xmemcached.exe` to `/bin/xmemcached` (don't forget to remove extension) and create
-a shell script file `/etc/init.d/xmemcached` with following contents:
-	
-	#!/bin/bash
-	### BEGIN INIT INFO
-	# Provides:            xmemcached
-	# Required-Start:      $syslog
-	# Required-Stop:       $syslog
-	# Should-Start:        $local_fs
-	# Should-Stop:         $local_fs
-	# Default-Start:       2 3 4 5
-	# Default-Stop:                0 1 6
-	# Short-Description:   Start xmemcached daemon
-	# Description:         Start xmemcached daemon
-	### END INIT INFO 
-	
-	SERVICE_PATH="/bin"
-	SERVICE_NAME="xmemcached"
-	export MONO_OPTIONS=--runtime=v4.0.30319
-	export LD_LIBRARY_PATH=.:/usr/local/mono/2.8/lib/:$LD_LIBRARY_PATH
-	
-	case "$1" in
-		start)
-			echo "Starting xmemcached"
-			mono-service2 -d:$SERVICE_PATH -l:/var/lock/$SERVICE_NAME.lock -m:$SERVICE_NAME $SERVICE_PATH/$SERVICE_NAME
-			;;
-			
-		debug)
-			echo "Starting xmemcached"
-			mono-service2 -d:$SERVICE_PATH -l:/var/lock/$SERVICE_NAME.lock -m:$SERVICE_NAME --debug $SERVICE_PATH/$SERVICE_NAME
-			;;
-			
-		stop)
-			echo "Stopping xmemcached"
-			kill `cat /var/lock/$SERVICE_NAME.lock`
-			rm /var/lock/$SERVICE_NAME.lock
-			;;
-		
-		restart)
-			echo "Stopping xmemcached"
-			kill `cat /var/lock/$SERVICE_NAME.lock`
-			rm /var/lock/$SERVICE_NAME.lock
-			
-			echo "Starting xmemcached"
-			mono-service2 -d:$SERVICE_PATH -l:/var/lock/$SERVICE_NAME.lock -m:$SERVICE_NAME $SERVICE_PATH/$SERVICE_NAME
-			;;
-		
-		force-restart)
-			echo "Forcing xmemcached to stop"
-			kill -s SIGKILL `cat /var/lock/$SERVICE_NAME.lock`
-			rm /var/lock/$SERVICE_NAME.lock
-			
-			echo "Starting xmemcached"
-			mono-service2 -d:$SERVICE_PATH -l:/var/lock/$SERVICE_NAME.lock -m:$SERVICE_NAME $SERVICE_PATH/$SERVICE_NAME
-			;;
-		
-		status)
-			echo "Writing xmemcached status to the log file"
-			kill -s SIGUSR1 `cat /var/lock/$SERVICE_NAME.lock`
-			;;
-		
-		*)
-			echo "Usage: /etc/init.d/xmemcached {start|stop|restart|force-restart|status}"
-			exit 1
-			;;
-	esac
-	
-	exit 0
+You can install service using GNU make by executing command `make install`, but don't forget to edit `conf/xmemcached.conf` beforehand.
 
-While editing you might want to change `LD_LIBRARY_PATH` variable to match it to your current mono version.
-After script was created execute following commands:
+To install service on linux manually you have to execute commands:
 
-	chmod +x /bin/xmemcached
-	chmod +x /etc/init.d/xmemcached
 	mkdir /etc/xmemcached
+	cp bin/xmemcached.exe /bin/xmemcached.exe
+	cp conf/xmemcached.conf /etc/xmemcached/xmemcached.conf
+	cp scripts/xmemcached /etc/init.d/xmemcached
+	chmod +x /bin/xmemcached.exe
+	chmod +x /etc/init.d/xmemcached
 	update-rc.d xmemcached defaults 20 80
+	/etc/init.d/xmemcached start
 
-Before starting the service you must create a configuration file (see next section).
+Before installing you might want to edit configuration file `conf/xmemcached.conf` and
+change `LD_LIBRARY_PATH` variable in `scripts/xmemcached` to match it your current mono version.
+The service will start up after installation so configure it correctly before installing.
 
 This installation instruction applies to Debian and Ubuntu linux distributions and may differ
 for other distributions.
@@ -192,51 +140,12 @@ for other distributions.
 Configuring
 ===========
 
-The sample contents of a configuration file `xmemcached.conf`:
+The sample contents of a configuration file are located in `conf/xmemcached.conf` that contains
+configuration that listens and accepts connections on localhost only.
 
-	# Change server_id only if there is more than one server in the network.
-	# It must be unique and not negative 32 bit integer (0 - 2000000000).
-	server_id = 0
-
-	# Comma or whitespace separated list of addresses to bind tcp listeners to.
-	# Address entry may be {*|localhost|ip}[:port]
-	# Samples:
-	#    bind_addr = *
-	#    bind_addr = localhost 192.168.1.1
-	#    bind_addr = localhost:11211; 192.168.1.1:11211
-	bind_addr = localhost; 192.168.1.90
-
-	# Comma or whitespace separated list of allowed client ip addresses.
-	allowed_addr = localhost; 192.168.1.14; 192.168.1.90
-
-	# Ip and port of next server in the loop chain of xmemcached servers.
-	# Uncomment next_server_addr ONLY when there is more than one xmemcached
-	# server!
-	# For normal functionality all servers must be linked in a chain loop.
-	# It means that next_server_addr setting in the last server must be ip and port
-	# of the first server.
-	# This is needed for "flush_all" and "delete" commands to execute on all
-	# xmemcached servers.
-	#next_server_addr = 127.0.0.1:11212
-
-	# Maximum amount of the data that may be stored in the memory. This maximum
-	# is applied for data only. Together with indexing overhead service may use
-	# more memory than limited by max_storage. Limit may be specified as a plain
-	# number of bytes or using number with "K", "M" or "G" suffix. Default is 16M.
-	max_storage = 16M
-
-	# Path to a log file or just "syslog" (which is default) in case when you
-	# want to log to syslog facility.
-	#log = /var/log/xmemcached.log
-	log = syslog
-
-	# A single character that will be used to identify tag names within keys.
-	# by default it is ":".
-	tag_character = :
-
-Currently service loads the config file only from `C:\xmemcached.conf` in windows
-or `/etc/xmemcached/xmemcached.conf` in linux.
-To change the path to your config file you should modify `Config.cs`
+By default service loads the config file from:
+* `./xmemcached.conf` in windows,
+* `/etc/xmemcached/xmemcached.conf` in linux.
 
 Running and stopping
 ====================
@@ -262,16 +171,22 @@ Uninstalling
 Windows
 -------
 
-Assuming you have installed the service to `C:\Services\xmemcached\` you have
-to run following commands to uninstall the service:
+You can uninstall the service using GNU make by executing the command `make uninstall`.
+
+To manually uninstall the service you have to run following commands as an administrator (assuming you have installed
+the service to `C:\Services\`):
 
 	net stop xmemcached
-	c:\Windows\Microsoft.NET\Framework\v4.0.30319\InstallUtil.exe /Uninstall /LogToConsole=true C:\Services\xmemcached\xmemcached.exe
+	c:\Windows\Microsoft.NET\Framework\v4.0.30319\InstallUtil.exe /Uninstall /LogToConsole=true C:\Services\xmemcached.exe
 
+Either if you uninstall it using GNU make or manually you have to execute commands as an administrator.
+	
 Linux
 -----
 
-Execute these commands to uninstall the service:
+You can uninstall the service using GNU make by executing the command `make uninstall`.
+
+Execute following commands to manually uninstall the service:
 
 	/etc/init.d/xmemcached stop
 	rm /etx/init.d/xmemcached

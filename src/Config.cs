@@ -25,11 +25,12 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Net;
 using System.Net.Sockets;
+using System.Reflection;
 
 namespace xmemcached {
 	public class Config {
-		public const string ConfigFilePathWin = @"C:\xmemcached.conf";
-		public const string ConfigFilePathLinux = @"/etc/xmemcached/xmemcached.conf";
+		public const string ConfigFileName = "xmemcached.conf";
+		public static string ConfigFilePath = null; // initialized in static constructor
 		
 		public Dictionary<IPAddress, bool> AllowedAddr = new Dictionary<IPAddress, bool>();
 		public List<IPEndPoint> BindAddr = new List<IPEndPoint>();
@@ -48,6 +49,13 @@ namespace xmemcached {
 		    }
 		}
 		
+		static Config() {
+			if( IsLinux )
+				ConfigFilePath = Path.Combine("/etc/xmemcached", ConfigFileName);
+			else
+				ConfigFilePath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), ConfigFileName);
+		}
+		
 		public Config() {
 			string line;
 			string[] data;
@@ -59,8 +67,7 @@ namespace xmemcached {
 			string addr;
 			IPAddress ipaddr;
 			IPEndPoint endpoint;
-			
-			using(StreamReader r = new StreamReader(new FileStream(IsLinux ? ConfigFilePathLinux : ConfigFilePathWin, FileMode.Open), Encoding.UTF8)) {
+			using(StreamReader r = new StreamReader(new FileStream(ConfigFilePath, FileMode.Open), Encoding.UTF8)) {
 				while( !r.EndOfStream ) {
 					lineNumber++;
 					line = r.ReadLine().Trim();

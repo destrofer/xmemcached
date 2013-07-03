@@ -1,2 +1,0 @@
-You can find the memcached protocol at https://github.com/memcached/memcached/blob/master/doc/protocol.txt
-or if it does not exists anymore find it among docs in https://github.com/memcached/memcached repository.

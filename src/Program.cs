@@ -36,18 +36,57 @@ using System.IO;
 
 namespace xmemcached {
 	class ServiceApp {
-		public static void Main(string[] args) {
-			if( args.Length > 0 && args[0].Equals("-c") ) {
-				Log.LogToConsole = true;
-				Program service = new Program();
-				service.ExecuteAsConsoleApp();
+		public static int Main(string[] args) {
+			bool console = false;
+			try {
+				for( int i = 0; i < args.Length; i++ ) {
+					switch( args[i] ) {
+						case "-c":
+							console = true;
+							break;
+						
+						case "-C":
+							if( args.Length <= i + 1 ) {
+								DisplayHelp();
+								return 1;
+							}
+							Config.ConfigFilePath = args[++i];
+							break;
+						
+						default:
+							DisplayHelp();
+							return 1;
+					}
+				}
+
+				if( !File.Exists(Config.ConfigFilePath) ) {
+					Console.WriteLine("Cannot find configuration file '{0}'", Config.ConfigFilePath);
+					return 2;
+				}
+				
+				if( console ) {
+					Log.LogToConsole = true;
+					Program service = new Program();
+					service.ExecuteAsConsoleApp();
+				}
+				else {
+					Log.LogToConsole = false;
+					ServiceBase[] servicesToRun;
+					servicesToRun = new ServiceBase[] { new Program() };
+					ServiceBase.Run( servicesToRun );
+				}
 			}
-			else {
-				Log.LogToConsole = false;
-				ServiceBase[] servicesToRun;
-				servicesToRun = new ServiceBase[] { new Program() };
-				ServiceBase.Run( servicesToRun );
+			catch(Exception ex) {
+				using(StreamWriter w = new StreamWriter(new FileStream(Program.IsLinux ? "/var/log/xmemcached-crash.log" : "C:\\xmemcached-crash.log", System.IO.FileMode.Append))) {
+					w.WriteLine("{0}", ex.ToString());
+				}
+				return 3;
 			}
+			return 0;
+		}
+		
+		public static void DisplayHelp() {
+			Console.WriteLine("usage: xmemcached [-c] [-C config_file_path]");
 		}
 	}
 
@@ -72,7 +111,6 @@ namespace xmemcached {
 	public class Program : System.ServiceProcess.ServiceBase {
 		public static volatile bool IsLinux;
 		
-		private static object ConsoleSync = new object();
 		public static Config Config = null;
 		
 		public static List<Server> Servers = new List<Server>();

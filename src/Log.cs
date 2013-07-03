@@ -56,7 +56,7 @@ namespace xmemcached {
 		static Log() {
 			PlatformID p = Environment.OSVersion.Platform;
 		    IsLinux = (p == PlatformID.Unix) || (p == PlatformID.MacOSX) || ((int)p == 128);
-			Console.OutputEncoding = Encoding.UTF8;
+			try { Console.OutputEncoding = Encoding.UTF8; } catch {} // this fails when trying to do it while running as windows service
 			SyslogServiceName = AppDomain.CurrentDomain.FriendlyName;
 			LogFilePath = String.Format("{0}.log", SyslogServiceName);
 			AppDomain.CurrentDomain.DomainUnload += LogClose;
