@@ -8,6 +8,8 @@ unique = $(if $(1),$(strip $(word 1,$(1)) $(call unique,$(filter-out $(word 1,$(
 path = $(subst /,$(PATHSYMBOL),$(1))
 empty := 
 space := $(empty) $(empty)
+escspace = $(subst $(space),\$(space),$(1))
+filelist = $(foreach FILE,$(2),$(call escspace,$(1)/$(FILE)))
 
 # .NET Framework versions: v1.0.3705, v1.1.4322, v2.0.50727, v3.0, v3.5, v4.0.30319
 FRAMEWORK := v4.0.30319
@@ -21,14 +23,13 @@ REFERENCES := mscorlib.dll\
 	System.Core.dll\
 	System.Data.dll\
 	System.Data.DataSetExtensions.dll\
-	Npgsql.dll\
 	System.Net.dll\
 	System.ServiceProcess.dll\
 	System.Xml.dll\
 	System.Xml.Linq.dll\
 	System.Numerics.dll
 
-IMPORTANT_DLL_FILES := Mono.Posix.dll Npgsql.dll
+IMPORTANT_DLL_FILES := mscorlib.dll Mono.Posix.dll
 
 SERVICE_NAME := xmemcached
 
@@ -38,7 +39,7 @@ CFG_SRCDIR := conf
 SCP_SRCDIR := scripts
 
 EXE_FILE := $(SERVICE_NAME).exe
-CFG_FILE := xmemcached.conf
+CFG_FILE := $(SERVICE_NAME).conf
 SCP_FILE := $(SERVICE_NAME)
 
 SOURCES := $(call find, $(EXE_SRCDIR), *.cs)
@@ -48,8 +49,11 @@ ifdef SystemRoot
 	LIB_DIR := $(ProgramFiles)/Mono-2.10.9/lib/mono/4.0
 	FRAMEWORK_DIR := $(SystemRoot)\Microsoft.NET\Framework\$(FRAMEWORK)
 	
+	touch = copy /b $(1)+,, $(1)>nul
+	cp = copy /Y $(1) $(2)
+	cpnx = if not exist $(2) copy $(1) $(2)
+	cpask = copy /-Y $(1) $(2)
 	RM := del
-	CP := copy
 	CHMOD := rem
 	MKDIR := mkdir
 	COMPILER := csc.exe
@@ -69,8 +73,11 @@ else
 	LIB_DIR := /usr/lib/mono/4.0
 	FRAMEWORK_DIR := $(LIB_DIR)
 	
+	touch = touch $(1)
+	cp = yes y | cp -i $(1) $(2)
+	cpnx = yes n | cp -i $(1) $(2)
+	cpask = cp -i $(1) $(2)
 	RM := rm
-	CP := cp
 	CHMOD := chmod
 	MKDIR := mkdir
 	COMPILER := dmcs.exe
@@ -85,7 +92,8 @@ else
 	DBG_OUTFILE := $(EXE_OUTDIR)/$(EXE_FILE).mdb
 endif
 
-DLL_OUTFILES := $(addprefix $(EXE_OUTDIR)/,$(IMPORTANT_DLL_FILES))
+DLL_OUTFILES := $(call filelist,$(EXE_OUTDIR),$(IMPORTANT_DLL_FILES))
+DLL_SRCFILES := $(call filelist,$(LIB_DIR),$(IMPORTANT_DLL_FILES))
 
 EXE_OUTFILE := $(EXE_OUTDIR)/$(EXE_FILE)
 CFG_SRCFILE := $(CFG_SRCDIR)/$(CFG_FILE)
@@ -136,26 +144,25 @@ $(EXE_OUTFILE): $(EXE_OUTDIR) $(SOURCES) $(DLL_OUTFILES) $(CFG_SRCFILE)
 	$(CSC) /out:$(call path,$(EXE_OUTFILE)) $(CSCFLAGS) $(addprefix /r:,$(REFERENCES)) $(PLATFORM_CSFLAGS) /recurse:$(subst /,\\,$(EXE_SRCDIR)/*.cs)
 
 $(EXE_DSTFILE): $(EXE_DSTDIR) $(EXE_OUTFILE) $(DLL_DSTFILES)
-	$(CP) "$(call path,$(EXE_OUTFILE))" "$(call path,$(EXE_DSTFILE))"
+	$(call cp,"$(call path,$(EXE_OUTFILE))","$(call path,$(EXE_DSTFILE))")
 	$(CHMOD) +x "$(call path,$(EXE_DSTFILE))"
 
 $(CFG_DSTFILE): $(CFG_DSTDIR) $(CFG_SRCFILE)
-	$(CP) "$(call path,$(CFG_SRCFILE))" "$(call path,$(CFG_DSTFILE))"
+	$(call cpask,"$(call path,$(CFG_SRCFILE))","$(call path,$(CFG_DSTFILE))")
 
 $(SCP_DSTFILE): $(SCP_DSTDIR) $(SCP_SRCFILE)
-	$(CP) "$(call path,$(SCP_SRCFILE))" "$(call path,$(SCP_DSTFILE))"
+	$(call cp,"$(call path,$(SCP_SRCFILE))","$(call path,$(SCP_DSTFILE))")
 	$(CHMOD) +x "$(call path,$(SCP_DSTFILE))"
 
 ifdef DLL_DSTFILES
 $(DLL_DSTFILES): $(EXE_DSTDIR) $(DLL_OUTFILES)
-	$(CP) "$(call path,$(EXE_OUTDIR)/$(@F))" "$(call path,$(EXE_DSTDIR)/$(@F))"
+	$(call cp,"$(call path,$(EXE_OUTDIR)/$(@F))","$(call path,$(EXE_DSTDIR)/$(@F))")
 endif
 
-$(DLL_OUTFILES): $(EXE_OUTDIR)
-	$(CP) "$(call path,$(LIB_DIR)/$(@F))" "$(call path,$(EXE_OUTDIR)/$(@F))"
+$(DLL_OUTFILES): $(EXE_OUTDIR) $(DLL_SRCFILES)
+	$(call cp,"$(call path,$(LIB_DIR)/$(@F))","$(call path,$(EXE_OUTDIR)/$(@F))")
 
 $(call unique,$(EXE_OUTDIR) $(EXE_DSTDIR) $(CFG_DSTDIR) $(SCP_DSTDIR)):
 	$(MKDIR) "$(call path,$@)"
 
-$(SOURCES) $(SCP_SRCFILE) $(CFG_SRCFILE):
-	
+$(SOURCES) $(SCP_SRCFILE) $(CFG_SRCFILE) $(DLL_SRCFILES):

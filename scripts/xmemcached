@@ -14,51 +14,89 @@
 SERVICE_PATH="/bin"
 SERVICE_NAME="xmemcached"
 SERVICE_FILE="$SERVICE_NAME.exe"
+CONFIG_FILE="/etc/$SERVICE_NAME/$SERVICE_NAME.conf"
+LOCK_FILE="/var/lock/$SERVICE_NAME.lock"
 export MONO_OPTIONS=--runtime=v4.0.30319
 export LD_LIBRARY_PATH=.:/usr/local/mono/2.8/lib/:$LD_LIBRARY_PATH
 
 case "$1" in
 	start)
-		echo "Starting $SERVICE_NAME"
-		mono-service2 -d:$SERVICE_PATH -l:/var/lock/$SERVICE_NAME.lock -m:$SERVICE_NAME $SERVICE_PATH/$SERVICE_FILE
+		if [ -e $LOCK_FILE ]
+		then
+			echo "Service $SERVICE_NAME is already running"
+		else
+			echo "Starting $SERVICE_NAME"
+			mono-service2 -d:$SERVICE_PATH -l:$LOCK_FILE -m:$SERVICE_NAME $SERVICE_PATH/$SERVICE_FILE -C $CONFIG_FILE
+		fi
 		;;
 		
 	debug)
-		echo "Starting $SERVICE_NAME"
-		mono-service2 -d:$SERVICE_PATH -l:/var/lock/$SERVICE_NAME.lock -m:$SERVICE_NAME --debug $SERVICE_PATH/$SERVICE_FILE
+		if [ -e $LOCK_FILE ]
+		then
+			echo "Service $SERVICE_NAME is already running"
+		else
+			echo "Starting $SERVICE_NAME in debug mode"
+			mono-service2 -d:$SERVICE_PATH -l:$LOCK_FILE -m:$SERVICE_NAME --debug $SERVICE_PATH/$SERVICE_FILE -C $CONFIG_FILE
+		fi
 		;;
 		
 	stop)
-		echo "Stopping $SERVICE_NAME"
-		kill `cat /var/lock/$SERVICE_NAME.lock`
-		rm /var/lock/$SERVICE_NAME.lock
+		if [ -e /var/lock/$SERVICE_NAME.lock ]
+		then
+			echo "Stopping $SERVICE_NAME"
+			kill `cat $LOCK_FILE`
+			rm $LOCK_FILE
+		else
+			echo "Service $SERVICE_NAME does not seem to be running"
+		fi
 		;;
 	
 	restart)
-		echo "Stopping $SERVICE_NAME"
-		kill `cat /var/lock/$SERVICE_NAME.lock`
-		rm /var/lock/$SERVICE_NAME.lock
+		if [ -e /var/lock/$SERVICE_NAME.lock ]
+		then
+			echo "Stopping $SERVICE_NAME"
+			kill `cat $LOCK_FILE`
+			rm $LOCK_FILE
+		fi
 		
 		echo "Starting $SERVICE_NAME"
-		mono-service2 -d:$SERVICE_PATH -l:/var/lock/$SERVICE_NAME.lock -m:$SERVICE_NAME $SERVICE_PATH/$SERVICE_FILE
+		mono-service2 -d:$SERVICE_PATH -l:$LOCK_FILE -m:$SERVICE_NAME $SERVICE_PATH/$SERVICE_FILE -C $CONFIG_FILE
 		;;
 	
 	force-restart)
-		echo "Forcing $SERVICE_NAME to stop"
-		kill -s SIGKILL `cat /var/lock/$SERVICE_NAME.lock`
-		rm /var/lock/$SERVICE_NAME.lock
+		if [ -e /var/lock/$SERVICE_NAME.lock ]
+		then
+			echo "Forcing $SERVICE_NAME to stop"
+			kill -s SIGKILL `cat $LOCK_FILE`
+			rm $LOCK_FILE
+		fi
 		
 		echo "Starting $SERVICE_NAME"
-		mono-service2 -d:$SERVICE_PATH -l:/var/lock/$SERVICE_NAME.lock -m:$SERVICE_NAME $SERVICE_PATH/$SERVICE_FILE
+		mono-service2 -d:$SERVICE_PATH -l:$LOCK_FILE -m:$SERVICE_NAME $SERVICE_PATH/$SERVICE_FILE -C $CONFIG_FILE
 		;;
 	
 	status)
-		echo "Writing $SERVICE_NAME status to the log file"
-		kill -s SIGUSR1 `cat /var/lock/$SERVICE_NAME.lock`
+		if [ -e /var/lock/$SERVICE_NAME.lock ]
+		then
+			echo "Sending SIGUSR1 to $SERVICE_NAME. Check the log for response."
+			kill -s SIGUSR1 `cat $LOCK_FILE`
+		else
+			echo "Service $SERVICE_NAME does not seem to be running"
+		fi
+		;;
+	
+	status2)
+		if [ -e /var/lock/$SERVICE_NAME.lock ]
+		then
+			echo "Sending SIGUSR2 to $SERVICE_NAME. Check the log for response."
+			kill -s SIGUSR2 `cat $LOCK_FILE`
+		else
+			echo "Service $SERVICE_NAME does not seem to be running"
+		fi
 		;;
 	
 	*)
-		echo "Usage: /etc/init.d/$SERVICE_NAME {start|stop|restart|force-restart|status}"
+		echo "Usage: /etc/init.d/$SERVICE_NAME {start|stop|restart|force-restart|debug|status|status2}"
 		exit 1
 		;;
 esac
