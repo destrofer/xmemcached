@@ -41,22 +41,26 @@ case "$1" in
 		;;
 		
 	stop)
-		if [ -e /var/lock/$SERVICE_NAME.lock ]
+		if [ -e $LOCK_FILE ]
 		then
 			echo "Stopping $SERVICE_NAME"
 			kill `cat $LOCK_FILE`
-			rm $LOCK_FILE
+			if [ -e $LOCK_FILE ]
+				rm $LOCK_FILE
+			fi
 		else
 			echo "Service $SERVICE_NAME does not seem to be running"
 		fi
 		;;
 	
 	restart)
-		if [ -e /var/lock/$SERVICE_NAME.lock ]
+		if [ -e $LOCK_FILE ]
 		then
 			echo "Stopping $SERVICE_NAME"
 			kill `cat $LOCK_FILE`
-			rm $LOCK_FILE
+			if [ -e $LOCK_FILE ]
+				rm $LOCK_FILE
+			fi
 		fi
 		
 		echo "Starting $SERVICE_NAME"
@@ -64,11 +68,13 @@ case "$1" in
 		;;
 	
 	force-restart)
-		if [ -e /var/lock/$SERVICE_NAME.lock ]
+		if [ -e $LOCK_FILE ]
 		then
 			echo "Forcing $SERVICE_NAME to stop"
 			kill -s SIGKILL `cat $LOCK_FILE`
-			rm $LOCK_FILE
+			if [ -e $LOCK_FILE ]
+				rm $LOCK_FILE
+			fi
 		fi
 		
 		echo "Starting $SERVICE_NAME"
@@ -76,7 +82,7 @@ case "$1" in
 		;;
 	
 	status)
-		if [ -e /var/lock/$SERVICE_NAME.lock ]
+		if [ -e $LOCK_FILE ]
 		then
 			echo "Sending SIGUSR1 to $SERVICE_NAME. Check the log for response."
 			kill -s SIGUSR1 `cat $LOCK_FILE`
@@ -86,7 +92,7 @@ case "$1" in
 		;;
 	
 	status2)
-		if [ -e /var/lock/$SERVICE_NAME.lock ]
+		if [ -e $LOCK_FILE ]
 		then
 			echo "Sending SIGUSR2 to $SERVICE_NAME. Check the log for response."
 			kill -s SIGUSR2 `cat $LOCK_FILE`

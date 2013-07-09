@@ -129,10 +129,8 @@ endif
 install:	$(EXE_DSTFILE) $(CFG_DSTFILE) $(SCP_DSTFILE)
 ifdef SystemRoot
 	$(INSTALL_UTIL) /LogToConsole=true "$(call path,$(EXE_DSTFILE))"
-	-net start $(SERVICE_NAME)
 else
 	update-rc.d $(SERVICE_NAME) defaults 20 80
-	-$(call path,$(SCP_DSTFILE)) start
 endif
 
 test:	make
