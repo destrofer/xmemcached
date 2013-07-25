@@ -46,6 +46,7 @@ case "$1" in
 			echo "Stopping $SERVICE_NAME"
 			kill `cat $LOCK_FILE`
 			if [ -e $LOCK_FILE ]
+			then
 				rm $LOCK_FILE
 			fi
 		else
@@ -59,6 +60,7 @@ case "$1" in
 			echo "Stopping $SERVICE_NAME"
 			kill `cat $LOCK_FILE`
 			if [ -e $LOCK_FILE ]
+			then
 				rm $LOCK_FILE
 			fi
 		fi
@@ -73,6 +75,7 @@ case "$1" in
 			echo "Forcing $SERVICE_NAME to stop"
 			kill -s SIGKILL `cat $LOCK_FILE`
 			if [ -e $LOCK_FILE ]
+			then
 				rm $LOCK_FILE
 			fi
 		fi
