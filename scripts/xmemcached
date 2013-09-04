@@ -87,17 +87,17 @@ case "$1" in
 	status)
 		if [ -e $LOCK_FILE ]
 		then
-			echo "Sending SIGUSR1 to $SERVICE_NAME. Check the log for response."
+			echo "Sending SIGUSR1 to $SERVICE_NAME (status). Check the log for response."
 			kill -s SIGUSR1 `cat $LOCK_FILE`
 		else
 			echo "Service $SERVICE_NAME does not seem to be running"
 		fi
 		;;
 	
-	status2)
+	flush)
 		if [ -e $LOCK_FILE ]
 		then
-			echo "Sending SIGUSR2 to $SERVICE_NAME. Check the log for response."
+			echo "Sending SIGUSR2 to $SERVICE_NAME (flush). Check the log for response."
 			kill -s SIGUSR2 `cat $LOCK_FILE`
 		else
 			echo "Service $SERVICE_NAME does not seem to be running"
@@ -105,7 +105,7 @@ case "$1" in
 		;;
 	
 	*)
-		echo "Usage: /etc/init.d/$SERVICE_NAME {start|stop|restart|force-restart|debug|status|status2}"
+		echo "Usage: /etc/init.d/$SERVICE_NAME {start|stop|restart|force-restart|debug|status|flush}"
 		exit 1
 		;;
 esac

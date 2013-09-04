@@ -205,6 +205,7 @@ namespace xmemcached {
 						new UnixSignal(Signum.SIGQUIT),
 						new UnixSignal(Signum.SIGTERM),
 						new UnixSignal(Signum.SIGUSR1),
+						new UnixSignal(Signum.SIGUSR2),
 						
 						//new UnixSignal(Signum.SIGKILL),
 						//new UnixSignal(Signum.SIGSTOP),
@@ -234,6 +235,10 @@ namespace xmemcached {
 						if( sig >= 0 && sig <= 4 ) {
 							StopService = true;
 							break;
+						}
+						else if( sig == 6 ) {
+							Log.WriteLine(Log.Level.Important, "Flushing via SIGUSR2 ({0})", DateTime.Now);
+							Flush(-1);
 						}
 						else {
 							Log.WriteLine(Log.Level.Important, "Start of state log ({0})", DateTime.Now);
