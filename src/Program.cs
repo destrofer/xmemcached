@@ -371,12 +371,15 @@ namespace xmemcached {
 			
 			lock(WriteLock) {
 				if( Storage.ContainsKey(itemId) ) {
-					if( (flags & SetFlags.Replace) != SetFlags.Replace || ((flags & SetFlags.CheckChangeId) == SetFlags.CheckChangeId && Storage[itemId].LastChangeId != changeId) )
+					if( (flags & SetFlags.CheckChangeId) == SetFlags.CheckChangeId && Storage[itemId].LastChangeId != changeId )
 						return StoreResult.Exists;
+					if( (flags & SetFlags.Replace) != SetFlags.Replace )
+						return StoreResult.NotStored;
 					Delete(itemId, -1);
 				}
 				else if( (flags & SetFlags.Create) != SetFlags.Create )
-					return StoreResult.NotFound;
+					return ((flags & SetFlags.CheckChangeId) == SetFlags.CheckChangeId) ? StoreResult.NotFound : StoreResult.NotStored;
+				
 				if( StoredSize + (ulong)data.Length > (ulong)Config.MaxStorage ) {
 					bool clean = true;
 					while( StoredSize + (ulong)data.Length > (ulong)Config.MaxStorage ) {
