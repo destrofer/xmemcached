@@ -78,8 +78,15 @@ namespace xmemcached {
 			lock(ConsoleLock) {
 				if( LogToFile ) {
 					try {
-						if( LogFile == null )
-								LogFile = new StreamWriter(new FileStream(LogFilePath, System.IO.FileMode.Append));
+						if( LogFile == null ) {
+							try {
+								File.Delete(String.Format("{0}.1", LogFilePath));
+							} catch {}
+							try {
+								File.Move(LogFilePath, String.Format("{0}.1", LogFilePath));
+							} catch {}
+							LogFile = new StreamWriter(new FileStream(LogFilePath, System.IO.FileMode.Append));
+						}
 						LogFile.WriteLine("[{0}] {1}", DateTime.Now, String.Format(fmt, parm));
 					}
 					catch {

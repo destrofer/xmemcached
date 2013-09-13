@@ -97,8 +97,11 @@ namespace xmemcached {
 			string command;
 			int i, bytes, exptime;
 			uint flags;
+			ulong changeId = 0;
 			bool isCas, res, quit = false;
 			int offs, read;
+			StoreResult storeResult;
+			DateTime exp;
 			
 			try {
 				while (!quit && !Program.StopService && Connection.Connected) {
@@ -136,9 +139,15 @@ namespace xmemcached {
 							SendResponse("END");
 							break;
 						
+						case "cas": isCas = true; goto case "set";
+						case "add": goto case "set";
+						case "replace": goto case "set";
 						case "set":
-							if( cmdTokens.Length < 5 ) {
-								SendResponse("CLIENT_ERROR set command must have at least 5 parameters");
+						if( cmdTokens.Length < (isCas ? 6 : 5) ) {
+								if( isCas )
+									SendResponse("CLIENT_ERROR cas command must have at least 6 parameters");
+								else
+									SendResponse(String.Format("CLIENT_ERROR {0} command must have at least 5 parameters", cmdTokens[0]));
 								break;
 							}
 							if( !uint.TryParse(cmdTokens[2], out flags) ) {
@@ -151,6 +160,10 @@ namespace xmemcached {
 							}
 							if( !int.TryParse(cmdTokens[4], out bytes) ) {
 								SendResponse("CLIENT_ERROR bytes parameter must be numeric");
+								break;
+							}
+							if( isCas && !ulong.TryParse(cmdTokens[5], out changeId) ) {
+								SendResponse("CLIENT_ERROR cas unique parameter must be numeric");
 								break;
 							}
 							if( bytes > Program.Config.MaxStorage ) {
@@ -171,15 +184,52 @@ namespace xmemcached {
 							}
 							if( offs < bytes || Program.StopService || (char)DataStream.ReadByte() != '\r' || (char)DataStream.ReadByte() != '\n' )
 								break;
-							DateTime exp;
+							
 							exp = (exptime == 0) ? DateTime.MaxValue : ((exptime <= 60*60*24*30) ? DateTime.Now : new DateTime(1970,1,1,0,0,0,0));
 							exp = exp.AddSeconds(exptime).ToLocalTime();
-							res = (Program.Set(cmdTokens[1], flags, data, exp, SetFlags.Create | SetFlags.Replace) == StoreResult.Stored);
+
+							SetFlags setFlags;
+							if( cmdTokens[0].Equals("cas") )
+								setFlags = SetFlags.Replace | SetFlags.CheckChangeId;
+							else if( cmdTokens[0].Equals("add") )
+								setFlags = SetFlags.Create;
+							else if( cmdTokens[0].Equals("replace") )
+								setFlags = SetFlags.Replace;
+							else
+								setFlags = SetFlags.Create | SetFlags.Replace;
+							
+							storeResult = Program.Set(cmdTokens[1], flags, data, exp, changeId, setFlags);
+							
 							if( cmdTokens.Length < 6 ) {
-								if( res )
-									SendResponse("STORED");
-								else
-									SendResponse("NOT_STORED");
+								switch( storeResult ) {
+									case StoreResult.Stored: SendResponse("STORED"); break;
+									case StoreResult.NotStored: SendResponse("NOT_STORED"); break;
+									case StoreResult.Exists: SendResponse("EXISTS"); break;
+									case StoreResult.NotFound: SendResponse("NOT_FOUND"); break;
+								}
+							}
+							break;
+						
+						case "touch":
+							if( cmdTokens.Length < 3 ) {
+								SendResponse("CLIENT_ERROR touch command must have at least 3 parameters");
+								break;
+							}
+							if( !int.TryParse(cmdTokens[2], out exptime) ) {
+								SendResponse("CLIENT_ERROR exptime parameter must be numeric");
+								break;
+							}
+							
+							exp = (exptime == 0) ? DateTime.MaxValue : ((exptime <= 60*60*24*30) ? DateTime.Now : new DateTime(1970,1,1,0,0,0,0));
+							exp = exp.AddSeconds(exptime).ToLocalTime();
+							
+							storeResult = Program.Touch(cmdTokens[1], exp);
+							
+							if( cmdTokens.Length < 4 ) {
+								switch( storeResult ) {
+									case StoreResult.Touched: SendResponse("TOUCHED"); break;
+									case StoreResult.NotFound: SendResponse("NOT_FOUND"); break;
+								}
 							}
 							break;
 							
@@ -212,6 +262,7 @@ namespace xmemcached {
 							break;
 							
 						default:
+							Log.WriteLine(Log.Level.Warning, "Client issued an unrecognized command: {0}", command);
 							SendResponse("ERROR");
 							break;
 					}

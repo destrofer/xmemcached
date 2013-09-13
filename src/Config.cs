@@ -40,6 +40,7 @@ namespace xmemcached {
 		public int MaxDeleteQueueLength = 128;
 		public int ReconnectDelay = 15000;
 		public string LogPath = null;
+		public Log.Level LogLevel = Log.Level.Info;
 		public char TagCharacter = ':';
 		
 		public static bool IsLinux {
@@ -82,9 +83,18 @@ namespace xmemcached {
 					data[1] = data[1].Trim();
 					if( data[1].Length == 0 )
 						continue; // empty option is considered to have a default value
-					switch (data[0]) {
+					switch (data[0].ToLower()) {
 						case "log":
 							LogPath = data[1].Equals("") ? null : data[1];
+							break;
+						
+						case "log_level":
+							switch(data[1].ToLower()) {
+								case "debug": LogLevel = Log.Level.Debug; break;
+								case "info": LogLevel = Log.Level.Info; break;
+								case "warning": LogLevel = Log.Level.Warning; break;
+								case "error": LogLevel = Log.Level.Error; break;
+							}
 							break;
 							
 						case "bind_addr":

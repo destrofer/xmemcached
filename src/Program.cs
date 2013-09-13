@@ -127,6 +127,8 @@ namespace xmemcached {
 		private static UnixSignal[] TermSig = null;
 		public static volatile bool RunningInConsole = false;
 		
+		public static ulong NextChangeId = 0;
+		
 		static Program() {
 			IsLinux = Config.IsLinux;
 		}
@@ -162,7 +164,7 @@ namespace xmemcached {
 		public void ServiceThreadFunc() {
 			Config = new Config();
 
-			Log.MaxLevel = Log.Level.Info;
+			Log.MaxLevel = Config.LogLevel;
 			Log.SyslogServiceName = ServiceName;
 			if( Config.LogPath.ToLower().Equals("syslog") ) {
 				Log.LogToFile = false;
@@ -337,7 +339,22 @@ namespace xmemcached {
 			return item;
 		}
 		
-		public static StoreResult Set(string id, uint customBits, byte[] data, DateTime expire, SetFlags flags) {
+		public static StoreResult Touch(string id, DateTime expire) {
+			string[] spl = id.Split(Config.TagCharacter);
+			string itemId = spl[0];
+			spl = null; // not needed anymore so free memory as quick as possible
+			if( itemId.Length == 0 )
+				return StoreResult.NotFound;
+			lock(WriteLock) {
+				if( Storage.ContainsKey(itemId) ) {
+					Storage[itemId].Expire = expire;
+					return StoreResult.Touched;
+				}
+			}
+			return StoreResult.NotFound;
+		}
+		
+		public static StoreResult Set(string id, uint customBits, byte[] data, DateTime expire, ulong changeId, SetFlags flags) {
 			string[] spl = id.Split(Config.TagCharacter);
 			string[] tags;
 			string itemId = spl[0];
@@ -354,7 +371,7 @@ namespace xmemcached {
 			
 			lock(WriteLock) {
 				if( Storage.ContainsKey(itemId) ) {
-					if( (flags & SetFlags.Replace) != SetFlags.Replace )
+					if( (flags & SetFlags.Replace) != SetFlags.Replace || ((flags & SetFlags.CheckChangeId) == SetFlags.CheckChangeId && Storage[itemId].LastChangeId != changeId) )
 						return StoreResult.Exists;
 					Delete(itemId, -1);
 				}
@@ -395,7 +412,7 @@ namespace xmemcached {
 						// too much ... need to clean up a bit
 					}
 				}
-				CacheItem item = new CacheItem(tags, customBits, data, expire, 0);
+				CacheItem item = new CacheItem(tags, customBits, data, expire, unchecked(NextChangeId++));
 				Storage.Add(itemId, item);
 				StoredSize += (ulong)data.Length;
 				if( tags != null ) {
@@ -492,13 +509,14 @@ namespace xmemcached {
 		None = 0x00,
 		Create = 0x01,
 		Replace = 0x02,
-		
+		CheckChangeId = 0x04,
 	}
 	
 	public enum StoreResult {
 		Stored,
 		NotStored,
 		Exists,
-		NotFound
+		NotFound,
+		Touched,
 	}
 }
