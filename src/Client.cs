@@ -52,6 +52,7 @@ namespace xmemcached {
 				NextClientId = 0;
 			m_ConnectTime = DateTime.Now;
 			Connection = client;
+			client.NoDelay = true;
 			DataStream = new NetworkStream(client);
 			Thread = new Thread(ClientThread);
 			Thread.Start();
