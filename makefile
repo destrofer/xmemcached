@@ -68,6 +68,8 @@ ifdef SystemRoot
 	DBG_OUTFILE := $(EXE_OUTDIR)/$(SERVICE_NAME).pdb
 	
 	DLL_DSTFILES := $(addprefix $(EXE_DSTDIR)/,$(IMPORTANT_DLL_FILES))
+
+	CSC := $(call path,$(FRAMEWORK_DIR)/$(COMPILER))
 else
 	PATHSYMBOL := /
 	LIB_DIR := /usr/lib/mono/4.0
@@ -80,8 +82,7 @@ else
 	RM := rm
 	CHMOD := chmod
 	MKDIR := mkdir
-	COMPILER := dmcs.exe
-	CSC := $(call path,$(LIB_DIR)/$(COMPILER))
+	COMPILER := dmcs
 
 	PLATFORM_CSFLAGS := /sdk:4 /platform:anycpu /d:LINUX /warn:4
 
@@ -90,6 +91,9 @@ else
 	SCP_DSTDIR := /etc/init.d
 	
 	DBG_OUTFILE := $(EXE_OUTDIR)/$(EXE_FILE).mdb
+
+	REFERENCES := $(addprefix $(LIB_DIR)/,$(REFERENCES))
+	CSC := $(COMPILER)
 endif
 
 DLL_OUTFILES := $(call filelist,$(EXE_OUTDIR),$(IMPORTANT_DLL_FILES))
@@ -104,7 +108,6 @@ CFG_DSTFILE := $(CFG_DSTDIR)/$(CFG_FILE)
 SCP_DSTFILE := $(SCP_DSTDIR)/$(SCP_FILE)
 
 export LIB = $(call path,$(LIB_DIR))
-CSC := $(call path,$(FRAMEWORK_DIR)/$(COMPILER))
 
 .PHONY:	make
 make:	$(EXE_OUTFILE)
